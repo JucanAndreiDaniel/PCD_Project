@@ -3,22 +3,77 @@
 #include <string.h>
 #include <arpa/inet.h>
 #include <openssl/sha.h>
+#include <pthread.h>
 // gcc -o server server.c -lcrypto -lssl
+
 #define SIZE (1024)
-void write_file(int sockfd)
+
+#define DBG_PRINT_ENABLED
+#if (defined(DBG_PRINT_ENABLED))
+#define DBG_PRINT(...) printf(__VA_ARGS__)
+#else
+#define DBG_PRINT(...)
+#endif
+
+typedef enum
 {
+    SHA256_T = 1,
+} algo_type_t;
+
+void call_sum_init(algo_type_t algo, void *CTX)
+{
+    switch (algo)
+    {
+    case SHA256_T:
+        SHA256_Init((SHA256_CTX *)CTX);
+        break;
+
+    default:
+        break;
+    }
+}
+
+void call_sum_update(algo_type_t algo, void *CTX, uint8_t *data, long data_len)
+{
+    switch (algo)
+    {
+    case SHA256_T:
+        (void)SHA256_Update((SHA256_CTX *)CTX, data, data_len);
+        break;
+    default:
+        DBG_PRINT("default for now\n");
+        break;
+    }
+}
+
+void call_sum_finale(algo_type_t algo, void *CTX, uint8_t *digest)
+{
+    switch (algo)
+    {
+    case SHA256_T:
+        (void)SHA256_Final((SHA256_CTX *)CTX, digest);
+        break;
+    default:
+        DBG_PRINT("default for now\n");
+        break;
+    }
+}
+
+void receive_data(int sockfd)
+{
+
     int n;
     FILE *fp;
     char *filename = "recv.txt";
     char buffer[SIZE];
     SHA_CTX sha;
-    SHA256_Init(&sha);
+    call_sum_init(1, &sha);
 
     fp = fopen(filename, "w");
     while (1)
     {
         int data_len;
-        (void)recv(sockfd, &data_len, sizeof(int),0);
+        (void)recv(sockfd, &data_len, sizeof(int), 0);
 
         n = recv(sockfd, buffer, data_len, 0);
         if (n <= 0)
@@ -26,21 +81,36 @@ void write_file(int sockfd)
             break;
             return;
         }
-        SHA256_Update(&sha, buffer, data_len);
-        printf("recv 1 byte\n");
+        call_sum_update(1, (void *)&sha, buffer, data_len);
         fprintf(fp, "%s", buffer);
         bzero(buffer, SIZE);
     }
     uint8_t digest[256];
 
-    SHA256_Final(digest,&sha);
+    call_sum_finale(1, (void *)&sha, digest);
 
-    for(int i=0;i<SHA256_DIGEST_LENGTH;i++)
+    for (int i = 0; i < SHA256_DIGEST_LENGTH; i++)
     {
-        printf("%02x",digest[i]);
+        DBG_PRINT("%02x", digest[i]);
     }
-    printf("\n");
+    DBG_PRINT("\n");
     return;
+}
+
+typedef struct
+{
+    int thid;
+    int new_sock;
+} th_data;
+
+ th_data new_th[4];
+
+void *thredFunction(void *arg)
+{
+    th_data *data_struct = (th_data *)arg;
+    receive_data(data_struct->new_sock);
+
+    return NULL;
 }
 
 int main()
@@ -60,7 +130,7 @@ int main()
         perror("[-]Error in socket");
         exit(1);
     }
-    printf("[+]Server socket created successfully.\n");
+    DBG_PRINT("[+]Server socket created successfully.\n");
 
     server_addr.sin_family = AF_INET;
     server_addr.sin_port = port;
@@ -72,22 +142,42 @@ int main()
         perror("[-]Error in bind");
         exit(1);
     }
-    printf("[+]Binding successfull.\n");
+    DBG_PRINT("[+]Binding successfull.\n");
 
-    if (listen(sockfd, 10) == 0)
+    int thread_count = 0;
+    pthread_t pid[4];
+
+
+    // while (1)
+    // {
+        if (listen(sockfd, 10) == 0)
+        {
+            DBG_PRINT("[+]Listening....\n");
+        }
+        else
+        {
+            perror("[-]Error in listening");
+            exit(1);
+        }
+        addr_size = sizeof(new_addr);
+        new_sock = accept(sockfd, (struct sockaddr *)&new_addr, &addr_size);
+
+        new_th[thread_count].thid = thread_count;
+        new_th[thread_count].new_sock = new_sock;
+
+        pthread_create(&pid[thread_count], NULL, &thredFunction, &new_th[thread_count]);
+        thread_count++;
+
+
+        DBG_PRINT("[+]Data written in the file successfully.\n");
+    // }
+
+    for(int wait=0; wait < thread_count; wait++)
     {
-        printf("[+]Listening....\n");
-    }
-    else
-    {
-        perror("[-]Error in listening");
-        exit(1);
+        pthread_join(pid[wait], NULL);
     }
 
-    addr_size = sizeof(new_addr);
-    new_sock = accept(sockfd, (struct sockaddr *)&new_addr, &addr_size);
-    write_file(new_sock);
-    printf("[+]Data written in the file successfully.\n");
+
 
     return 0;
 }
