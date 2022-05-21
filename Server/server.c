@@ -3,8 +3,8 @@
 #include <string.h>
 #include <arpa/inet.h>
 #include <openssl/sha.h>
-#define SIZE 1024
-
+// gcc -o server server.c -lcrypto -lssl
+#define SIZE (1024)
 void write_file(int sockfd)
 {
     int n;
@@ -17,19 +17,29 @@ void write_file(int sockfd)
     fp = fopen(filename, "w");
     while (1)
     {
-        n = recv(sockfd, buffer, SIZE, 0);
+        int data_len;
+        (void)recv(sockfd, &data_len, sizeof(int),0);
+
+        n = recv(sockfd, buffer, data_len, 0);
         if (n <= 0)
         {
             break;
             return;
         }
-        SHA256_Update(&sha, buffer, SIZE);
-        // fprintf(fp, "%s", buffer);
+        SHA256_Update(&sha, buffer, data_len);
+        printf("recv 1 byte\n");
+        fprintf(fp, "%s", buffer);
         bzero(buffer, SIZE);
     }
     uint8_t digest[256];
+
     SHA256_Final(digest,&sha);
-    printf("%02x\n",digest);
+
+    for(int i=0;i<SHA256_DIGEST_LENGTH;i++)
+    {
+        printf("%02x",digest[i]);
+    }
+    printf("\n");
     return;
 }
 
