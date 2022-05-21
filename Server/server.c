@@ -148,8 +148,8 @@ int main()
     pthread_t pid[4];
 
 
-    // while (1)
-    // {
+    while (1)
+    {
         if (listen(sockfd, 10) == 0)
         {
             DBG_PRINT("[+]Listening....\n");
@@ -166,11 +166,13 @@ int main()
         new_th[thread_count].new_sock = new_sock;
 
         pthread_create(&pid[thread_count], NULL, &thredFunction, &new_th[thread_count]);
+        DBG_PRINT("[+]Thread created successfully.\n");
+        DBG_PRINT("[+]Thread id: %d\n", thread_count);
         thread_count++;
 
 
         DBG_PRINT("[+]Data written in the file successfully.\n");
-    // }
+    }
 
     for(int wait=0; wait < thread_count; wait++)
     {
