@@ -2,7 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <arpa/inet.h>
-#include <sha256.h>
+#include <openssl/sha.h>
 #define SIZE 1024
 
 void write_file(int sockfd)
@@ -11,8 +11,8 @@ void write_file(int sockfd)
     FILE *fp;
     char *filename = "recv.txt";
     char buffer[SIZE];
-    TCSha256State_t a;
-    tc_sha256_init(a);
+    SHA_CTX sha;
+    SHA256_Init(&sha);
 
     fp = fopen(filename, "w");
     while (1)
@@ -23,12 +23,12 @@ void write_file(int sockfd)
             break;
             return;
         }
-        tc_sha256_update(a, (uint8_t*)buffer, SIZE);
+        SHA256_Update(&sha, buffer, SIZE);
         // fprintf(fp, "%s", buffer);
         bzero(buffer, SIZE);
     }
     uint8_t digest[256];
-    tc_sha256_final(digest, a);
+    SHA256_Final(digest,&sha);
     printf("%02x\n",digest);
     return;
 }
