@@ -32,16 +32,30 @@ void send_file(FILE *fp, int sockfd)
     }
 }
 
-int main()
+int main(int argc, char *argv[])
 {
+    // check if the user has entered the correct number of arguments
+    if (argc != 2)
+    {
+        printf("[-]Usage: %s <filename>\n", argv[0]);
+        exit(1);
+    }
+
+    //check if the file exists
+    char *filename = argv[1];
+    FILE *fp = fopen(filename, "r");
+    if (fp == NULL)
+    {
+        printf("[-]Error in opening file.\n");
+        exit(1);
+    }
+
     char *ip = "127.0.0.1";
     int port = 8080;
     int e;
 
     int sockfd;
     struct sockaddr_in server_addr;
-    FILE *fp;
-    char *filename = "send.txt";
 
     sockfd = socket(AF_INET, SOCK_STREAM, 0);
     if (sockfd < 0)
