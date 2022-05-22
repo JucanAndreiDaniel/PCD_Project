@@ -4,28 +4,21 @@
 #include <arpa/inet.h>
 #include <openssl/sha.h>
 #include <pthread.h>
+#include <unistd.h>
+
+#include "../shared/Utils.h"
+#include "../shared/types.h"
+
 // gcc -o server server.c -lcrypto -lssl
 
-#define SIZE (1024)
-
-#define DBG_PRINT_ENABLED
-#if (defined(DBG_PRINT_ENABLED))
-#define DBG_PRINT(...) printf(__VA_ARGS__)
-#else
-#define DBG_PRINT(...)
-#endif
-
-typedef enum
-{
-    SHA256_T = 1,
-} algo_type_t;
+#define SIZE (1024) // this should be changed
 
 void call_sum_init(algo_type_t algo, void *CTX)
 {
     switch (algo)
     {
     case SHA256_T:
-        SHA256_Init((SHA256_CTX *)CTX);
+        (void)SHA256_Init((SHA256_CTX *)CTX); //need to check error
         break;
 
     default:
@@ -97,18 +90,20 @@ void receive_data(int sockfd)
     return;
 }
 
+
 typedef struct
 {
     int thid;
     int new_sock;
 } th_data;
 
- th_data new_th[4];
 
 void *thredFunction(void *arg)
 {
     th_data *data_struct = (th_data *)arg;
     receive_data(data_struct->new_sock);
+
+    close(data_struct->new_sock);
 
     return NULL;
 }
@@ -117,61 +112,45 @@ int main()
 {
     char *ip = "127.0.0.1";
     int port = 8080;
-    int e;
 
     int sockfd, new_sock;
     struct sockaddr_in server_addr, new_addr;
-    socklen_t addr_size;
-    char buffer[SIZE];
+    socklen_t addr_size = sizeof(new_addr);
 
-    sockfd = socket(AF_INET, SOCK_STREAM, 0);
-    if (sockfd < 0)
-    {
-        perror("[-]Error in socket");
-        exit(1);
-    }
+    CHECK_SET_NO_ERR(socket(AF_INET, SOCK_STREAM, 0), NEGATIVE_ERR, sockfd, "[-]Error in socket\n");
+
     DBG_PRINT("[+]Server socket created successfully.\n");
 
     server_addr.sin_family = AF_INET;
     server_addr.sin_port = port;
     server_addr.sin_addr.s_addr = inet_addr(ip);
 
-    e = bind(sockfd, (struct sockaddr *)&server_addr, sizeof(server_addr));
-    if (e < 0)
-    {
-        perror("[-]Error in bind");
-        exit(1);
-    }
-    DBG_PRINT("[+]Binding successfull.\n");
+    CHECK_ERR(bind(sockfd, (struct sockaddr *)&server_addr, sizeof(server_addr)),
+              OK,
+              "[+]Binding successfull.\n",
+              "[-]Error in bind\n");
 
     int thread_count = 0;
-    pthread_t pid[4];
+    pthread_t pid[100];
+    th_data new_th[100];
 
-
+    CHECK_ERR(listen(sockfd, 32), OK, "[+]Listening....\n", "[-]Error in listening\n");
     while (1)
     {
-        if (listen(sockfd, 10) == 0)
-        {
-            DBG_PRINT("[+]Listening....\n");
-        }
-        else
-        {
-            perror("[-]Error in listening");
-            exit(1);
-        }
-        addr_size = sizeof(new_addr);
         new_sock = accept(sockfd, (struct sockaddr *)&new_addr, &addr_size);
+        CHECK_NO_ERR(new_sock, NEGATIVE_ERR, "[+]Accept\n", "[-]Error accepting\n");
 
         new_th[thread_count].thid = thread_count;
         new_th[thread_count].new_sock = new_sock;
 
-        pthread_create(&pid[thread_count], NULL, &thredFunction, &new_th[thread_count]);
-        DBG_PRINT("[+]Thread created successfully.\n");
-        DBG_PRINT("[+]Thread id: %d\n", thread_count);
+        CHECK_ERR(pthread_create(&pid[thread_count], NULL, &thredFunction, &new_th[thread_count]),
+                    OK,
+                    "[+]Thread created successfully.\n",
+                    "[-]Thred create error\n");
+
         thread_count++;
+        printf("thread_count %d\n", thread_count);
 
-
-        DBG_PRINT("[+]Data written in the file successfully.\n");
     }
 
     for(int wait=0; wait < thread_count; wait++)
