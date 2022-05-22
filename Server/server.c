@@ -51,7 +51,7 @@ void call_sum_finale(algo_type_t algo, void *CTX, uint8_t *digest)
     switch (algo)
     {
     case SHA256_T:
-        (void)SHA256_Final((SHA256_CTX *)CTX, digest);
+        (void)SHA256_Final(digest, (SHA256_CTX *)CTX);
         break;
     default:
         DBG_PRINT("default for now\n");
