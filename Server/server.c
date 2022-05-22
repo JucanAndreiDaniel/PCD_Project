@@ -3,6 +3,8 @@
 #include <string.h>
 #include <arpa/inet.h>
 #include <openssl/sha.h>
+#include <openssl/md5.h>
+
 #include <pthread.h>
 #include <unistd.h>
 
@@ -18,9 +20,23 @@ void call_sum_init(algo_type_t algo, void *CTX)
     switch (algo)
     {
     case SHA256_T:
-        (void)SHA256_Init((SHA256_CTX *)CTX); //need to check error
+        (void)SHA256_Init((SHA256_CTX *)CTX); // need to check error
         break;
-
+    case SHA512_T:
+        (void)SHA512_Init((SHA512_CTX *)CTX); // need to check error
+        break;
+    case MD5_T:
+        (void)MD5_Init((MD5_CTX *)CTX); // need to check error
+        break;
+    case SHA1_T:
+        (void)SHA1_Init((SHA_CTX *)CTX); // need to check error
+        break;
+    case SHA224_T:
+        (void)SHA224_Init((SHA256_CTX *)CTX); // need to check error
+        break;
+    case SHA384_T:
+        (void)SHA384_Init((SHA512_CTX *)CTX); // need to check error
+        break;
     default:
         break;
     }
@@ -32,6 +48,21 @@ void call_sum_update(algo_type_t algo, void *CTX, uint8_t *data, long data_len)
     {
     case SHA256_T:
         (void)SHA256_Update((SHA256_CTX *)CTX, data, data_len);
+        break;
+    case SHA512_T:
+        (void)SHA512_Update((SHA512_CTX *)CTX, data, data_len);
+        break;
+    case MD5_T:
+        (void)MD5_Update((MD5_CTX *)CTX, data, data_len);
+        break;
+    case SHA1_T:
+        (void)SHA1_Update((SHA_CTX *)CTX, data, data_len);
+        break;
+    case SHA224_T:
+        (void)SHA224_Update((SHA256_CTX *)CTX, data, data_len);
+        break;
+    case SHA384_T:
+        (void)SHA384_Update((SHA512_CTX *)CTX, data, data_len);
         break;
     default:
         DBG_PRINT("default for now\n");
@@ -45,6 +76,21 @@ void call_sum_finale(algo_type_t algo, void *CTX, uint8_t *digest)
     {
     case SHA256_T:
         (void)SHA256_Final(digest, (SHA256_CTX *)CTX);
+        break;
+    case SHA512_T:
+        (void)SHA512_Final(digest, (SHA512_CTX *)CTX);
+        break;
+    case MD5_T:
+        (void)MD5_Final(digest, (MD5_CTX *)CTX);
+        break;
+    case SHA1_T:
+        (void)SHA1_Final(digest, (SHA_CTX *)CTX);
+        break;
+    case SHA224_T:
+        (void)SHA224_Final(digest, (SHA256_CTX *)CTX);
+        break;
+    case SHA384_T:
+        (void)SHA384_Final(digest, (SHA512_CTX *)CTX);
         break;
     default:
         DBG_PRINT("default for now\n");
@@ -90,15 +136,13 @@ void receive_data(int sockfd)
     return;
 }
 
-
 typedef struct
 {
     int thid;
     int new_sock;
 } th_data;
 
-
-void *thredFunction(void *arg)
+void *threadFunction(void *arg)
 {
     th_data *data_struct = (th_data *)arg;
     receive_data(data_struct->new_sock);
@@ -143,22 +187,19 @@ int main()
         new_th[thread_count].thid = thread_count;
         new_th[thread_count].new_sock = new_sock;
 
-        CHECK_ERR(pthread_create(&pid[thread_count], NULL, &thredFunction, &new_th[thread_count]),
-                    OK,
-                    "[+]Thread created successfully.\n",
-                    "[-]Thred create error\n");
+        CHECK_ERR(pthread_create(&pid[thread_count], NULL, &threadFunction, &new_th[thread_count]),
+                  OK,
+                  "[+]Thread created successfully.\n",
+                  "[-]Thred create error\n");
 
         thread_count++;
         printf("thread_count %d\n", thread_count);
-
     }
 
-    for(int wait=0; wait < thread_count; wait++)
+    for (int wait = 0; wait < thread_count; wait++)
     {
         pthread_join(pid[wait], NULL);
     }
-
-
 
     return 0;
 }
