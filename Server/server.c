@@ -4,10 +4,9 @@
 #include <arpa/inet.h>
 #include <openssl/sha.h>
 #include <openssl/md5.h>
-
+#include <openssl/aes.h>
 #include <pthread.h>
 #include <unistd.h>
-
 #include "../shared/Utils.h"
 #include "../shared/types.h"
 
@@ -36,6 +35,8 @@ void call_sum_init(algo_type_t algo, void *CTX)
         break;
     case SHA384_T:
         (void)SHA384_Init((SHA512_CTX *)CTX); // need to check error
+        break;
+    case AES_T:
         break;
     default:
         break;
@@ -106,7 +107,7 @@ void receive_data(int sockfd)
     char *filename = "recv.txt";
     char buffer[SIZE];
     SHA_CTX sha;
-    call_sum_init(1, &sha);
+    call_sum_init(6, &sha);
 
     fp = fopen(filename, "w");
     while (1)
@@ -120,13 +121,13 @@ void receive_data(int sockfd)
             break;
             return;
         }
-        call_sum_update(1, (void *)&sha, buffer, data_len);
+        call_sum_update(6, (void *)&sha, buffer, data_len);
         fprintf(fp, "%s", buffer);
         bzero(buffer, SIZE);
     }
     uint8_t digest[256];
 
-    call_sum_finale(1, (void *)&sha, digest);
+    call_sum_finale(6, (void *)&sha, digest);
 
     for (int i = 0; i < SHA256_DIGEST_LENGTH; i++)
     {
