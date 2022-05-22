@@ -79,13 +79,6 @@ int main(int argc, char *argv[])
     }
     printf("[+]Connected to Server.\n");
 
-    fp = fopen(filename, "r"); // allready opened
-    if (fp == NULL)
-    {
-        perror("[-]Error in reading file.");
-        exit(1);
-    }
-
     send_file(fp, sockfd);
     printf("[+]File data sent successfully.\n");
 
