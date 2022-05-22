@@ -3,7 +3,12 @@
 
 typedef enum
 {
-    SHA256_T = 1,
+    SHA1_T = 1,
+    SHA224_T = 2,
+    SHA384_T = 3,
+    SHA256_T = 4,
+    SHA512_T = 5,
+    MD5_T = 6,
 } algo_type_t;
 
 
