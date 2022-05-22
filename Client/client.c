@@ -34,6 +34,8 @@ void send_file(FILE *fp, int sockfd)
 
 int main(int argc, char *argv[])
 {
+    // TODO check for algo type and send it to server
+    // TODO server like error checking
     // check if the user has entered the correct number of arguments
     if (argc != 2)
     {
@@ -77,7 +79,7 @@ int main(int argc, char *argv[])
     }
     printf("[+]Connected to Server.\n");
 
-    fp = fopen(filename, "r");
+    fp = fopen(filename, "r"); // allready opened
     if (fp == NULL)
     {
         perror("[-]Error in reading file.");
