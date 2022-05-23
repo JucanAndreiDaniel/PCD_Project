@@ -95,7 +95,7 @@ paths:
                 type: boolean
         404:
           description: "Nu exista in cadrul aplicatiei un fisier cu acel nume. Generati un checksum intai prin metoda put"
-    post:
+    put:
       tags:
       - "client"
       summary: "Permite oricarui client sa urce pe aplicatie un fisier pentru a-i fi generat checksum-ul"
