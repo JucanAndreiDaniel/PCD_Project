@@ -38,8 +38,6 @@ void call_sum_init(algo_type_t algo, void *CTX)
     case SHA384_T:
         (void)SHA384_Init((SHA512_CTX *)CTX); // need to check error
         break;
-    case AES_T:
-        break;
     default:
         break;
     }
@@ -99,14 +97,15 @@ void call_sum_finale(algo_type_t algo, void *CTX, uint8_t *digest)
         DBG_PRINT("default for now\n");
         break;
     }
+    printf("adahdiopajhaijg\n");
 }
 
 void receive_data(int sockfd)
 {
 
     int n;
-    FILE *fp;
-    char *filename = "recv.txt";
+    // FILE *fp;
+    // char *filename = "recv.txt";
     char buffer[SIZE];
     void *ctx = malloc(GENERIC_CONTEXT_SIZE);
 
@@ -115,33 +114,40 @@ void receive_data(int sockfd)
         return;
     }
 
-    call_sum_init(TEST_ALGO, ctx);
+    algo_type_t option;
+    (void)recv(sockfd, &option, sizeof(algo_type_t), 0);
+    printf("%d ###\n", option);
 
-    fp = fopen(filename, "w");
+    call_sum_init(option, ctx);
+
+    // fp = fopen(filename, "w");
     while (1)
     {
         int data_len;
         (void)recv(sockfd, &data_len, sizeof(int), 0);
 
         n = recv(sockfd, buffer, data_len, 0);
-        if (n <= 0)
+        if (n <= 0 || strcmp(buffer, "end"))
         {
             break;
-            return;
+            // return;
         }
-        call_sum_update(TEST_ALGO, (void *)ctx, buffer, data_len);
-        fprintf(fp, "%s", buffer);
+
+        call_sum_update(option, (void *)ctx, buffer, data_len);
+        // fprintf(fp, "%s", buffer);
         bzero(buffer, SIZE);
     }
-    uint8_t digest[256];
+    uint8_t digest[digest_size_list[(uint8_t)option]];
 
-    call_sum_finale(TEST_ALGO, (void *)ctx, digest);
+    call_sum_finale(option, (void *)ctx, digest);
 
-    for (int i = 0; i < SHA256_DIGEST_LENGTH; i++)
+    for (int i = 0; i < digest_size_list[(uint8_t)option]; i++)
     {
         DBG_PRINT("%02x", digest[i]);
     }
     DBG_PRINT("\n");
+
+    send(sockfd, digest, sizeof(uint8_t) * digest_size_list[(uint8_t)option], 0);
 
     if(NULL != ctx)
     {

@@ -3,6 +3,7 @@
 #include <unistd.h>
 #include <string.h>
 #include <arpa/inet.h>
+#include "../shared/types.h"
 
 #define SIZE (1024)
 
@@ -34,10 +35,10 @@ void send_file(FILE *fp, int sockfd)
 
 int main(int argc, char *argv[])
 {
-    // TODO check for algo type and send it to server
     // TODO server like error checking
+
     // check if the user has entered the correct number of arguments
-    if (argc != 2)
+    if (argc != 3)
     {
         printf("[-]Usage: %s <filename>\n", argv[0]);
         exit(1);
@@ -79,8 +80,29 @@ int main(int argc, char *argv[])
     }
     printf("[+]Connected to Server.\n");
 
+    // check for correct number value
+    algo_type_t option = atoi(argv[2]);
+
+    send(sockfd, &option, sizeof(algo_type_t), 0);
+    printf("[+]Send algo type.\n");
+
+
     send_file(fp, sockfd);
     printf("[+]File data sent successfully.\n");
+    char stop_send[] = "end";
+
+    send(sockfd, &stop_send, sizeof(stop_send), 0);
+
+    uint8_t digest[digest_size_list[(uint8_t)option]];
+    memset(digest, 0, sizeof(digest));
+
+    recv(sockfd, digest, sizeof(uint8_t) * digest_size_list[(uint8_t)option], 0);
+
+    for (int i = 0; i < digest_size_list[(uint8_t)option]; i++)
+    {
+        printf("%02x", digest[i]);
+    }
+    printf("\n");
 
     printf("[+]Closing the connection.\n");
     close(sockfd);
