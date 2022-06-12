@@ -13,6 +13,8 @@
 // gcc -o server server.c -lcrypto -lssl
 
 #define SIZE (1024) // this should be changed
+#define GENERIC_CONTEXT_SIZE (2 * 1024) // 2048 bytes (2KB) should be enought for any context
+#define TEST_ALGO (4)
 
 void call_sum_init(algo_type_t algo, void *CTX)
 {
@@ -106,8 +108,14 @@ void receive_data(int sockfd)
     FILE *fp;
     char *filename = "recv.txt";
     char buffer[SIZE];
-    SHA_CTX sha;
-    call_sum_init(6, &sha);
+    void *ctx = malloc(GENERIC_CONTEXT_SIZE);
+
+    if(NULL == ctx)
+    {
+        return;
+    }
+
+    call_sum_init(TEST_ALGO, ctx);
 
     fp = fopen(filename, "w");
     while (1)
@@ -121,19 +129,25 @@ void receive_data(int sockfd)
             break;
             return;
         }
-        call_sum_update(6, (void *)&sha, buffer, data_len);
+        call_sum_update(TEST_ALGO, (void *)ctx, buffer, data_len);
         fprintf(fp, "%s", buffer);
         bzero(buffer, SIZE);
     }
     uint8_t digest[256];
 
-    call_sum_finale(6, (void *)&sha, digest);
+    call_sum_finale(TEST_ALGO, (void *)ctx, digest);
 
     for (int i = 0; i < SHA256_DIGEST_LENGTH; i++)
     {
         DBG_PRINT("%02x", digest[i]);
     }
     DBG_PRINT("\n");
+
+    if(NULL != ctx)
+    {
+        free (ctx);
+    }
+
     return;
 }
 
@@ -149,6 +163,10 @@ void *threadFunction(void *arg)
     receive_data(data_struct->new_sock);
 
     close(data_struct->new_sock);
+
+    pthread_t id = pthread_self();
+
+    pthread_exit(id);
 
     return NULL;
 }
