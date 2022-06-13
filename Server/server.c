@@ -16,6 +16,14 @@
 #define GENERIC_CONTEXT_SIZE (2 * 1024) // 2048 bytes (2KB) should be enought for any context
 #define TEST_ALGO (4)
 
+
+///////// ------- [Global Data]
+int thread_count = 0;
+static pthread_mutex_t mtx = PTHREAD_MUTEX_INITIALIZER;
+static char file_name[] = "log.txt";
+
+
+
 void call_sum_init(algo_type_t algo, void *CTX)
 {
     switch (algo)
@@ -97,15 +105,13 @@ void call_sum_finale(algo_type_t algo, void *CTX, uint8_t *digest)
         DBG_PRINT("default for now\n");
         break;
     }
-    printf("adahdiopajhaijg\n");
 }
 
 void receive_data(int sockfd)
 {
 
     int n;
-    // FILE *fp;
-    // char *filename = "recv.txt";
+    uint32_t total_size = 0;
     char buffer[SIZE];
     void *ctx = malloc(GENERIC_CONTEXT_SIZE);
 
@@ -120,21 +126,21 @@ void receive_data(int sockfd)
 
     call_sum_init(option, ctx);
 
-    // fp = fopen(filename, "w");
     while (1)
     {
-        int data_len;
+        int data_len = 0;
         (void)recv(sockfd, &data_len, sizeof(int), 0);
+
+        total_size +=data_len;
 
         n = recv(sockfd, buffer, data_len, 0);
         if (n <= 0 || strcmp(buffer, "end"))
         {
             break;
-            // return;
         }
 
         call_sum_update(option, (void *)ctx, buffer, data_len);
-        // fprintf(fp, "%s", buffer);
+
         bzero(buffer, SIZE);
     }
     uint8_t digest[digest_size_list[(uint8_t)option]];
@@ -146,6 +152,33 @@ void receive_data(int sockfd)
         DBG_PRINT("%02x", digest[i]);
     }
     DBG_PRINT("\n");
+
+    pthread_mutex_lock(&mtx);
+    FILE *fp;
+    fp = fopen(file_name, "a"); // open file to append it
+
+    if(NULL != fp)
+    {
+        fprintf(fp, "%d;", (int)option);
+
+        fflush(fp);
+
+        for (int i = 0; i < digest_size_list[(uint8_t)option]; i++)
+        {
+            fprintf(fp,"%02x", digest[i]);
+
+            fflush(fp);
+        }
+
+        fprintf(fp, ";%u\n", total_size);
+
+        fflush(fp);
+
+        fclose(fp);
+    }
+
+    pthread_mutex_unlock(&mtx);
+
 
     send(sockfd, digest, sizeof(uint8_t) * digest_size_list[(uint8_t)option], 0);
 
@@ -172,6 +205,10 @@ void *threadFunction(void *arg)
 
     pthread_t id = pthread_self();
 
+    pthread_mutex_lock(&mtx);
+    thread_count--;
+    pthread_mutex_unlock(&mtx);
+
     pthread_exit(id);
 
     return NULL;
@@ -181,6 +218,10 @@ int main()
 {
     char *ip = "127.0.0.1";
     int port = 8080;
+
+    FILE *fp;
+    fp = fopen(file_name, "w"); // just truncate/create for the current session
+    fclose(fp);
 
     int sockfd, new_sock;
     struct sockaddr_in server_addr, new_addr;
@@ -199,7 +240,6 @@ int main()
               "[+]Binding successfull.\n",
               "[-]Error in bind\n");
 
-    int thread_count = 0;
     pthread_t pid[100];
     th_data new_th[100];
 
@@ -212,12 +252,17 @@ int main()
         new_th[thread_count].thid = thread_count;
         new_th[thread_count].new_sock = new_sock;
 
+
+
         CHECK_ERR(pthread_create(&pid[thread_count], NULL, &threadFunction, &new_th[thread_count]),
                   OK,
                   "[+]Thread created successfully.\n",
                   "[-]Thred create error\n");
 
+        pthread_mutex_lock(&mtx);
         thread_count++;
+        pthread_mutex_unlock(&mtx);
+
         printf("thread_count %d\n", thread_count);
     }
 
