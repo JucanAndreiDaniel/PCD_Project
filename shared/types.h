@@ -1,6 +1,6 @@
 #ifndef SHARED_TYPES
 #define SHARED_TYPES
-
+#include <stdint.h>
 #define ALGO_NUM (6)
 
 typedef enum
