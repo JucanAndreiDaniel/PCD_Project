@@ -217,7 +217,7 @@ int callback_custom_upload_function(const struct _u_request *request,
 
   if (NULL != fp)
   {
-    fprintf(fp, "%d;%s,%zu;%f", (int)option, finalisimo, file_size, seconds);
+    fprintf(fp, "%d;%s,%zu;%f\n", (int)option, finalisimo, file_size, seconds);
     fflush(fp);
     fclose(fp);
   }
@@ -228,7 +228,7 @@ int callback_custom_upload_function(const struct _u_request *request,
   {
     free(ctx);
   }
-  
+
   ulfius_set_string_body_response(response, 200, finalisimo);
 
   return U_CALLBACK_CONTINUE;
@@ -276,7 +276,7 @@ int callback_checksum_response_function(const struct _u_request *request,
 
   if (NULL != fp)
   {
-    fprintf(fp, "%d;%s,%zu;%f", (int)option, finalisimo, file_size, seconds);
+    fprintf(fp, "%d;%s,%zu;%f\n", (int)option, finalisimo, file_size, seconds);
     fflush(fp);
     fclose(fp);
   }
