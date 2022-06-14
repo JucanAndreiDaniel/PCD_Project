@@ -1,20 +1,3 @@
-/**
- *
- * Ulfius Framework sheep_counter program
- *
- * This program implements a small set of webservices and a tiny static files
- * server
- *
- * As a result, the index.html page will increment a sheep counter and
- * shows a new sheep on the screen every time an increment is done (every 5
- * seconds)
- *
- * Copyright 2015-2022 Nicolas Mora <mail@babelouest.org>
- *
- * License MIT
- *
- */
-
 #include "../shared/Utils.h"
 #include "../shared/types.h"
 #include <arpa/inet.h>
@@ -32,7 +15,6 @@
 #include <unistd.h>
 
 #include "include/http_compression_callback.h"
-#include "include/static_compressed_inmemory_website_callback.h"
 #include "include/u_example.h"
 
 #define PORT 8080
