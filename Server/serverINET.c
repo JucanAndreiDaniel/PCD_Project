@@ -29,11 +29,9 @@ void receive_data(int sockfd)
 
     sum_operation_t operation;
     (void)recv(sockfd, &operation, sizeof(sum_operation_t), 0);
-    printf("operation: %d\n", operation);
 
     algo_type_t option;
     (void)recv(sockfd, &option, sizeof(algo_type_t), 0);
-    printf("option: %d\n", option);
 
     uint32_t data_size;
     (void)recv(sockfd, &data_size, sizeof(uint32_t), 0);
@@ -92,7 +90,7 @@ void receive_data(int sockfd)
 
     if (CHECKSUM_OP == operation)
     {
-        send(sockfd, checksum_str, sizeof(char*) * digest_size_list[(uint8_t)option] * 2 + 1, 0);
+        send(sockfd, checksum_str, sizeof(char *) * digest_size_list[(uint8_t)option] * 2 + 1, 0);
     }
     else
     {
@@ -147,10 +145,6 @@ void *inet_main(void *args)
 {
     char *ip = "127.0.0.1";
     int port = *((int *)args);
-
-    FILE *fp;
-    fp = fopen(file_name, "w"); // just truncate/create for the current session
-    fclose(fp);
 
     int sockfd, new_sock;
     struct sockaddr_in server_addr, new_addr;

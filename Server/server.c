@@ -13,7 +13,7 @@ void *unix_main(void *args);
 void *inet_main(void *args);
 void *rest_main(void *args);
 
-#define UNIXSOCKET "/tmp/unixds"
+#define UNIXSOCKET "/tmp/server.sock"
 #define INETPORT 8081
 #define RESTPORT 8080
 
