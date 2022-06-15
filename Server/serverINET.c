@@ -49,8 +49,9 @@ void receive_data(int sockfd)
 
     while (1)
     {
-        int data_len = 0;
-        (void)recv(sockfd, &data_len, sizeof(int), 0);
+        uint32_t data_len = 0;
+        (void)recv(sockfd, &data_len, sizeof(uint32_t), 0);
+        printf("data_len is %d\n", data_len);
         if (data_len > SIZE)
         {
             break;
@@ -60,9 +61,9 @@ void receive_data(int sockfd)
         n = recv(sockfd, buffer, data_len, 0);
         if (n <= 0 || strcmp(buffer, "end") == 0)
         {
+            printf("[-]Error in receiving data.\n");
             break;
         }
-
         call_sum_update(option, (void *)ctx, buffer, data_len);
 
         bzero(buffer, SIZE);

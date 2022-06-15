@@ -11,37 +11,38 @@
 void send_file(FILE *fp, int sockfd, uint32_t file_size)
 {
     int n;
-    char data[file_size];
-
-    // n = fread(data, 1, file_size, fp);
-
-    send(sockfd, data, n, 0);
-
-    // return;
+    char data[SIZE];
 
     while (1)
     {
+        // fread(data, SIZE, 1, fp);
         fgets(data, SIZE, fp);
         int data_length = strlen(data);
-        // if data_lenght is above 1024 then something is wrong
-        if (data_length > SIZE || data_length == 0 || data == NULL)
+
+        if (data_length == 0 || data == NULL)
         {
             // printf("Error: data_length is above 1024\n");
+            printf("Error: data_length is %d\n", data_length);
+            printf("Error: data is %s\n", data);
             break;
         }
-        // before sending the actual data lets send the lenght of it
-        // in order to compute the checksum only on useful data
-        printf("%d sizeof \n", strlen(data));
-        if (send(sockfd, &data_length, sizeof(int), 0) == -1)
+        printf("data_length is %d\n", data_length);
+        if (send(sockfd, &data_length, sizeof(uint32_t), 0) == -1)
         {
+            printf("Error: data_length is %d\n", data_length);
+            printf("Error: data is %s\n", data);
             perror("[-]Error in sending data_length.");
-            exit(1);
+            // exit(1);
         }
 
+        printf("%d sizeof \n", strlen(data));
+        printf("data is %s\n", data);
         if (send(sockfd, data, strlen(data), 0) == -1)
         {
             perror("[-]Error in sending file.");
-            exit(1);
+            printf("Error: data_length is %d\n", data_length);
+            printf("Error: data is %s\n", data);
+            // exit(1);
         }
         bzero(data, SIZE);
     }
