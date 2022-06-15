@@ -19,13 +19,14 @@ void send_file(FILE *fp, int sockfd, uint32_t file_size)
 
     // return;
 
-    while (fgets(data, SIZE, fp) != NULL)
+    while (1)
     {
+        fgets(data, SIZE, fp);
         int data_length = strlen(data);
-        //if data_lenght is above 1024 then something is wrong
-        if (data_length > SIZE)
+        // if data_lenght is above 1024 then something is wrong
+        if (data_length > SIZE || data_length == 0 || data == NULL)
         {
-            printf("Error: data_length is above 1024\n");
+            // printf("Error: data_length is above 1024\n");
             break;
         }
         // before sending the actual data lets send the lenght of it
@@ -48,7 +49,6 @@ void send_file(FILE *fp, int sockfd, uint32_t file_size)
 
 int main(int argc, char *argv[])
 {
-    // TODO server like error checking
     uint32_t digest_size_list[ALGO_NUM] = {(uint32_t)MD5_SZ, (uint32_t)SHA_SZ, (uint32_t)SHA224_SZ, (uint32_t)SHA256_SZ, (uint32_t)SHA384_SZ, (uint32_t)SHA512_SZ};
 
     // check if the user has entered the correct number of arguments
@@ -113,9 +113,6 @@ int main(int argc, char *argv[])
     printf("[+]Sent file size %d.\n", file_size);
 
     send_file(fp, sockfd, file_size);
-    // uint8_t *buffer = (uint8_t *)malloc(file_size);
-    // fread(buffer, file_size, 1, fp);
-    // printf("[+]Sent file.%s\n",buffer);
 
     char stop_send[] = "end";
 
@@ -124,10 +121,8 @@ int main(int argc, char *argv[])
     uint8_t digest[digest_size_list[(uint8_t)option]];
     memset(digest, 0, sizeof(digest));
 
-    // receive checksum as char *
-    char *checksum = malloc(sizeof(char*) * digest_size_list[(uint8_t)option] * 2 + 1);
-    recv(sockfd, checksum, sizeof(char*) * digest_size_list[(uint8_t)option] * 2, 0);
-    // printf("sizeof checksum: %d\n", sizeof(char*) * digest_size_list[(uint8_t)option] * 2 + 1);
+    char *checksum = malloc(sizeof(char *) * digest_size_list[(uint8_t)option] * 2 + 1);
+    recv(sockfd, checksum, sizeof(char *) * digest_size_list[(uint8_t)option] * 2, 0);
 
     printf("[+]Received checksum.\n");
     printf("%s\n", checksum);
