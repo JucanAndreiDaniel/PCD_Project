@@ -144,7 +144,7 @@ void writeLog(char *file_name, algo_type_t option, char *checksum, long file_siz
 
     if (NULL != fp)
     {
-        fprintf(fp, "%d;%s,%zu;%f\n", (int)option, checksum, file_size, seconds);
+        fprintf(fp, "%d;%s;%zu;%f\n", (int)option, checksum, file_size, seconds);
         fflush(fp);
         fclose(fp);
     }
