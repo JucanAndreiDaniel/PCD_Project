@@ -1,11 +1,18 @@
 include ../config.mk
 
-TARGET = client
+all: client adminClient
 
-all: $(TARGET)
+client: client.c
+	$(CC) -o client client.c
 
-$(TARGET): $(TARGET).c
-	$(CC) -o $(TARGET) $(TARGET).c
+adminClient: adminClient.c
+	$(CC) -o adminClient adminClient.c
+
+testClient: client
+	./client
+
+testAdmin: adminClient
+	./adminClient
 
 clean:
-	$(RM) $(TARGET)
+	$(RM) adminClient client
