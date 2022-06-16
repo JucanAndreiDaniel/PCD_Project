@@ -15,18 +15,15 @@ void send_file(FILE *fp, int sockfd, uint32_t file_size)
 
     while (1)
     {
-        // fread(data, SIZE, 1, fp);
         fgets(data, SIZE, fp);
         int data_length = strlen(data);
 
         if (data_length == 0 || data == NULL)
         {
-            // printf("Error: data_length is above 1024\n");
             printf("Error: data_length is %d\n", data_length);
             printf("Error: data is %s\n", data);
             break;
         }
-        printf("data_length is %d\n", data_length);
         if (send(sockfd, &data_length, sizeof(uint32_t), 0) == -1)
         {
             printf("Error: data_length is %d\n", data_length);
@@ -35,8 +32,6 @@ void send_file(FILE *fp, int sockfd, uint32_t file_size)
             // exit(1);
         }
 
-        printf("%d sizeof \n", strlen(data));
-        printf("data is %s\n", data);
         if (send(sockfd, data, strlen(data), 0) == -1)
         {
             perror("[-]Error in sending file.");
@@ -105,13 +100,11 @@ int main(int argc, char *argv[])
     send(sockfd, &option, sizeof(algo_type_t), 0);
     printf("[+]Send algo type %d.\n", option);
 
-    // send file size
     uint32_t file_size = 0;
     fseek(fp, 0, SEEK_END);
     file_size = ftell(fp);
     fseek(fp, 0, SEEK_SET);
     send(sockfd, &file_size, sizeof(uint32_t), 0);
-    printf("[+]Sent file size %d.\n", file_size);
 
     send_file(fp, sockfd, file_size);
 

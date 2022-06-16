@@ -12,7 +12,7 @@
 
 #define SIZE (1024) // this should be changed
 #define GENERIC_CONTEXT_SIZE \
-    (2 * 1024) // 2048 bytes (2KB) should be enought for any context
+    (2 * SIZE) // 2048 bytes (2KB) should be enought for any context
 #define TEST_ALGO (4)
 
 ///////// ------- [Global Data]
@@ -51,7 +51,6 @@ void receive_data(int sockfd)
     {
         uint32_t data_len = 0;
         (void)recv(sockfd, &data_len, sizeof(uint32_t), 0);
-        printf("data_len is %d\n", data_len);
         if (data_len > SIZE)
         {
             break;

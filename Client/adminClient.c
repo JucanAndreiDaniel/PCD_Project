@@ -70,12 +70,41 @@ int main(int argc, char *argv[])
 
     if (ok)
     {
-        if ((len = recv(fd, buff, 8192, 0)) < 0)
+        struct timeval tv;
+        tv.tv_sec = 5;
+        tv.tv_usec = 0;
+        fd_set readfds;
+        FD_ZERO(&readfds);
+        FD_SET(fd, &readfds);
+        ret = select(fd + 1, &readfds, NULL, NULL, &tv);
+        if (ret == 0)
         {
-            perror("recv");
-            printf("Could not receive message.\n");
+            printf("timeout\n");
             ok = 0;
         }
+        else if (ret == -1)
+        {
+            perror("select");
+            ok = 0;
+        }
+        else
+        {
+            if (FD_ISSET(fd, &readfds))
+            {
+                len = recv(fd, buff, sizeof(buff), 0);
+                if (len == -1)
+                {
+                    perror("recv");
+                    ok = 0;
+                }
+                else
+                {
+                    buff[len] = 0;
+                    printf("received %s\n", buff);
+                }
+            }
+        }
+
         printf("receive %d %s\n", len, buff);
     }
 
@@ -84,9 +113,7 @@ int main(int argc, char *argv[])
         printf("\n");
         printf("1. Get Logs\n");
         printf("2. Get Average running time\n");
-        printf("3. Get Total running time\n");
-        printf("4. Get Total number of requests\n");
-        printf("5. Get Threads Currently running\n");
+        printf("3. Get Total number of requests\n");
         printf("0. Exit\n");
 
         printf("\n");
@@ -112,36 +139,27 @@ int main(int argc, char *argv[])
         case 1:
             printf("Logs:\n");
             break;
-
         case 2:
-            printf("Average running time:\n");
+            printf("Average running time:");
             break;
         case 3:
-            printf("Total running time:\n");
-            break;
-        case 4:
-            printf("Total number of requests:\n");
-            break;
-        case 5:
-            printf("Threads Currently running:\n");
+            printf("Total number of requests:");
             break;
         case 0:
             printf("Exiting...\n");
             send(fd, "exit", strlen("exit") + 1, 0);
             ok = 0;
             close(fd);
+            return;
         }
-        printf("\n");
         while (len = recv(fd, buff, 8192, 0))
         {
-            printf("%s", buff);
             if (strcmp(buff, "end") == 0)
             {
                 break;
             }
+            printf("%s", buff);
         }
-        // wait for enter key
-        getchar();
     }
 
     if (fd >= 0)
@@ -151,5 +169,4 @@ int main(int argc, char *argv[])
 
     unlink(clientSocket);
     return 0;
-    // menu for user to choose which option to use
 }
