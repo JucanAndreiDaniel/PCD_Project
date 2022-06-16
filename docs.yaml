@@ -16,57 +16,12 @@ info:
   version: "1.0"
   title: "Checksum Checker API"
 tags:
-- name: "admin"
-  description: "API calls disponibile doar clientului admin"
 - name: "client"
   description: "API calls disponibile tuturor utilizatorilor aplicatiei"
 
 paths:
-  /algorithm:
-    patch:
-      tags:
-      - "admin"
-      summary: "Permite clientului admin sa activeze sau sa dezactiveze un algoritm dezactivat anterior"
-      parameters:
-        - in: body
-          name: body
-          schema:
-            type: object
-            properties:
-              algorithm:
-                type: string
-                example: "SHA-256"
-      responses:
-        200:
-          description: "Successful operation"
-        403:
-          description: "Client neautorizat - Se va folosi doar clientul admin UNIX"
-  /sensitiveFile:
-    delete:
-      tags:
-      - "admin"
-      summary: "Permite clientului admin sa stearga anumite fisiere sensitive sau cu repercusiuni legale"
-      parameters:
-        - in: body
-          name: body
-          schema:
-            type: object
-            properties:
-              path:
-                type: string
-                example: "SHA-256/definetlyNotCP.jpeg"
-              file (optional):
-                type: string
-                format: byte
-      responses:
-        200:
-          description: "Successful operation"
-        403:
-          description: "Client neautorizat - Se va folosi doar clientul admin UNIX"
-        500:
-          description: "Fisier neexistent"
-  /checksum:
-    get:
+  /verify-checksum:
+    post:
       tags:
       - "client"
       summary: "Permite oricarui client sa-si compare checksum-ul fisierului lui cu cel existent in aplicatia noastra"
@@ -76,15 +31,17 @@ paths:
           schema:
             type: object
             properties:
-              filename:
-                type: string
-                example: "safefile.exe"
-              file:
-                type: string
-                format: byte
+              algorithm:
+                type: integer
+                example: 3
+                description: "3 represents SHA256. Refer to Discord client's pcd.algorithms command for a 1:1 list of relations between this integer and the desired algorithm"
               checksum:
                 type: string
                 example: "32471304294102794107"
+              file:
+                type: string
+                format: byte
+              
       responses:
         200:
           description: "Successful operation"
@@ -92,10 +49,10 @@ paths:
             type: object
             properties:
               matches:
-                type: boolean
-        404:
-          description: "Nu exista in cadrul aplicatiei un fisier cu acel nume. Generati un checksum intai prin metoda put"
-    put:
+                type: string
+                example: "OK or NOK"
+  /checksum:
+    post:
       tags:
       - "client"
       summary: "Permite oricarui client sa urce pe aplicatie un fisier pentru a-i fi generat checksum-ul"
@@ -105,9 +62,10 @@ paths:
           schema:
             type: object
             properties:
-              filename:
-                type: string
-                example: "saeffile.exe"
+              algorithm:
+                type: integer
+                example: 3
+                description: "3 represents SHA256. Refer to Discord client's pcd.algorithms command for a 1:1 list of relations between this integer and the desired algorithm"
               file:
                 type: string
                 format: byte
